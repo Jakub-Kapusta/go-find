@@ -2,22 +2,13 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 
+	"github.com/Jakub-Kapusta/go-find/apps/find"
 	"github.com/spf13/cobra"
 )
 
 var rootDir string
-
-func init() {
-	// Global Flags
-	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.go-find.yaml)")
-	rootCmd.PersistentFlags().StringVar(&rootDir, "root_dir", "./", "Directory to search in")
-
-	// Local Flags
-	//rootCmd.Flags().StringVar(&rootDir, "root_dir", "./", "Directory to search in")
-}
 
 var rootCmd = &cobra.Command{
 	Version: "0.0.1",
@@ -34,14 +25,19 @@ This application is under construction.`,
 		return nil
 	},
 	// args[0] is the first actual argument, and not the name of the program.
+	// Only arguments not caught by our flag definitions will be present.
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Hello World!")
-		fmt.Println("Root dir: ", rootDir)
-		if len(args) > 0 {
-			fmt.Println("args[0]: ", args[0])
-		}
-
+		find.Test(args, rootDir)
 	},
+}
+
+func init() {
+	// Global Flags
+	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.go-find.yaml)")
+	rootCmd.PersistentFlags().StringVar(&rootDir, "root_dir", "./", "Directory to search in")
+
+	// Local Flags
+	//rootCmd.Flags().StringVar(&rootDir, "root_dir", "./", "Directory to search in")
 }
 
 func Execute() {

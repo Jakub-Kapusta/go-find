@@ -3,7 +3,9 @@ package find
 
 import "fmt"
 
-func test() {
-	fmt.Println("Hello World!")
-
+func Test(args []string, rootDir string) {
+	fmt.Println("Root dir: ", rootDir)
+	if len(args) > 0 {
+		fmt.Println("args: ", args)
+	}
 }
