@@ -1,0 +1,52 @@
+// Copyright © 2024 Jakub Kapusta <jakub-dev1@protonmail.com>
+package cmd
+
+import (
+	"fmt"
+	"os"
+
+	"github.com/spf13/cobra"
+)
+
+var rootDir string
+
+func init() {
+	// Global Flags
+	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.go-find.yaml)")
+	rootCmd.PersistentFlags().StringVar(&rootDir, "root_dir", "./", "Directory to search in")
+
+	// Local Flags
+	//rootCmd.Flags().StringVar(&rootDir, "root_dir", "./", "Directory to search in")
+}
+
+var rootCmd = &cobra.Command{
+	Version: "0.0.1",
+	Use:     "gofind TODO",
+	Short:   "Find files and directories.",
+	Long: `A partial GNU findutils replacement implemented ing GO.
+
+This application is under construction.`,
+	Args: func(cmd *cobra.Command, args []string) error {
+		// Run the custom validation logic
+		//if myapp.IsValidColor(args[0]) {
+		//	return nil
+		//}
+		return nil
+	},
+	// args[0] is the first actual argument, and not the name of the program.
+	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Println("Hello World!")
+		fmt.Println("Root dir: ", rootDir)
+		if len(args) > 0 {
+			fmt.Println("args[0]: ", args[0])
+		}
+
+	},
+}
+
+func Execute() {
+	err := rootCmd.Execute()
+	if err != nil {
+		os.Exit(1)
+	}
+}
