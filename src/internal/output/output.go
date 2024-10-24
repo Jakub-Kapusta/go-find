@@ -8,7 +8,7 @@ import (
 	"unicode"
 )
 
-func SafePrint(w *bufio.Writer, s string) {
+func SafePrint(w *bufio.Writer, s string, lineEnding byte) {
 	rs := []rune(s)
 
 	// Most runes will be 2 bytes so allocate at least len(rs)*2.
@@ -27,7 +27,7 @@ func SafePrint(w *bufio.Writer, s string) {
 	}
 
 	// Add line ending.
-	ret = append(ret, '\n')
+	ret = append(ret, lineEnding)
 
 	_, err := w.Write(ret)
 	if err != nil {
@@ -36,8 +36,8 @@ func SafePrint(w *bufio.Writer, s string) {
 
 }
 
-func UnsafePrint(w *bufio.Writer, s string) {
-	_, err := w.WriteString(s + "\n")
+func UnsafePrint(w *bufio.Writer, s string, lineEnding string) {
+	_, err := w.WriteString(s + lineEnding)
 	if err != nil {
 		fmt.Println(err)
 	}
