@@ -8,6 +8,7 @@ import (
 	"unicode"
 )
 
+// Slower but prevents unexpected things to happen to our terminal.
 func SafePrint(w *bufio.Writer, s string, lineEnding byte) {
 	rs := []rune(s)
 
@@ -20,6 +21,8 @@ func SafePrint(w *bufio.Writer, s string, lineEnding byte) {
 		if !unicode.IsControl(r) {
 			ret = append(ret, byte(r))
 		} else {
+			// Control characters will be replaced with a string representation of their unicode code.
+			// Example: U+0090 will be printed as the string literal U+0090, and not as the actual unicode code point.
 			os.Stderr.WriteString(fmt.Sprintf("String contains unicode control characters: %q\n", s))
 			ret = append(ret, []byte(fmt.Sprintf("%U", r))...)
 		}
@@ -36,9 +39,11 @@ func SafePrint(w *bufio.Writer, s string, lineEnding byte) {
 
 }
 
+// Fast but unexpected things can happen to our terminal.
 func UnsafePrint(w *bufio.Writer, s string, lineEnding string) {
 	_, err := w.WriteString(s + lineEnding)
 	if err != nil {
+		// TODO implement better logging.
 		fmt.Println(err)
 	}
 }
