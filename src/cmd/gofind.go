@@ -29,7 +29,7 @@ This application is under construction.`,
 	// args[0] is the first actual argument, and not the name of the program.
 	// Only arguments not caught by our flag definitions will be present.
 	Run: func(cmd *cobra.Command, args []string) {
-		find.Test(args, rootDir, unsafePrint, print0)
+		find.Find(args, rootDir, unsafePrint, print0)
 	},
 }
 
