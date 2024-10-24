@@ -3,18 +3,16 @@ package find
 
 import (
 	"bufio"
-	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"sync"
-
-	"github.com/Jakub-Kapusta/go-find/internal/output"
 )
 
 type finder struct {
 	wg          sync.WaitGroup
 	w           *bufio.Writer
+	printer     chan<- string // Close when done.
 	rootDir     string
 	unsafePrint bool
 	print0      bool
@@ -30,31 +28,39 @@ func newFinder(f *os.File, rootDir string, unsafePrint bool, print0 bool) *finde
 	}
 }
 
-func (f *finder) run() {
+func (f *finder) run() error {
+	var lineEnding string
+	if f.print0 {
+		lineEnding = nullString
+	} else {
+		lineEnding = newlineString
+	}
+
+	if f.unsafePrint {
+		f.printer = NewUnsafePrinter(f, lineEnding)
+	} else {
+		f.printer = NewSafePrinter(f, lineEnding)
+	}
+
 	filepath.WalkDir(f.rootDir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			os.Stderr.WriteString(err.Error() + newlineString)
 			return nil
 		}
 
-		if f.unsafePrint {
-			if f.print0 {
-				output.UnsafePrint(f.w, path, nullString)
-			} else {
-				output.UnsafePrint(f.w, path, newlineString)
-			}
-
-		} else {
-			if f.print0 {
-				output.SafePrint(f.w, path, nullByte)
-			} else {
-				output.SafePrint(f.w, path, newlineByte)
-			}
-		}
+		f.printer <- path
 		return nil
 	})
 
+	return f.close()
+}
+
+func (f *finder) close() error {
+	close(f.printer)
+	f.wg.Wait()
+
 	if err := f.w.Flush(); err != nil {
-		fmt.Println(err)
+		return err
 	}
+	return nil
 }
