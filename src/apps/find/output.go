@@ -7,6 +7,9 @@ import (
 	"unicode"
 )
 
+// A printer should not check if f.ctx is cancelled.
+// The sender will stop sending and close the channel if the ctx is cancelled.
+// The printer should then process its buffer and exit on chanel close.
 // Slower but prevents unexpected things to happen to our terminal.
 func NewSafePrinter(f *finder, lineEnding string) chan<- string {
 	c := make(chan string, 32)
@@ -55,6 +58,9 @@ func NewSafePrinter(f *finder, lineEnding string) chan<- string {
 	return c
 }
 
+// A printer should not check if f.ctx is cancelled.
+// The sender will stop sending and close the channel if the ctx is cancelled.
+// The printer should then process its buffer and exit on chanel close.
 // Fast but unexpected things can happen to our terminal.
 func NewUnsafePrinter(f *finder, lineEnding string) chan<- string {
 	c := make(chan string, 32)
@@ -75,7 +81,6 @@ func NewUnsafePrinter(f *finder, lineEnding string) chan<- string {
 				}
 			}
 		}
-
 	}(c, f)
 
 	return c

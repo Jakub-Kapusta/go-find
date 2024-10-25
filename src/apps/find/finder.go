@@ -3,6 +3,7 @@ package find
 
 import (
 	"bufio"
+	"context"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -10,6 +11,7 @@ import (
 )
 
 type finder struct {
+	ctx         context.Context
 	wg          sync.WaitGroup
 	w           *bufio.Writer
 	printer     chan<- string // Close when done.
@@ -18,8 +20,9 @@ type finder struct {
 	print0      bool
 }
 
-func newFinder(f *os.File, rootDir string, unsafePrint bool, print0 bool) *finder {
+func newFinder(ctx context.Context, f *os.File, rootDir string, unsafePrint bool, print0 bool) *finder {
 	return &finder{
+		ctx: ctx,
 		// 4 MiB buffer
 		w:           bufio.NewWriterSize(f, 2048*2048),
 		rootDir:     rootDir,
@@ -42,16 +45,23 @@ func (f *finder) run() error {
 		f.printer = NewSafePrinter(f, lineEnding)
 	}
 
-	filepath.WalkDir(f.rootDir, func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			os.Stderr.WriteString(err.Error() + newlineString)
+	err := filepath.WalkDir(f.rootDir, func(path string, d fs.DirEntry, err error) error {
+		select {
+		case <-f.ctx.Done():
+			return f.ctx.Err()
+		default:
+			if err != nil {
+				os.Stderr.WriteString(err.Error() + newlineString)
+				return nil
+			}
+
+			f.printer <- path
 			return nil
 		}
-
-		f.printer <- path
-		return nil
 	})
-
+	if err != nil {
+		os.Stderr.WriteString("\n" + err.Error() + "\n")
+	}
 	return f.close()
 }
 

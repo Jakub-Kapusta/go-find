@@ -2,15 +2,25 @@
 package cmd
 
 import (
+	"context"
 	"os"
+	"sync"
 
 	"github.com/Jakub-Kapusta/go-find/apps/find"
+	"github.com/Jakub-Kapusta/go-find/internal/signals"
 	"github.com/spf13/cobra"
 )
 
-var rootDir string
-var unsafePrint bool
-var print0 bool
+var (
+	// WaitGroup for global goroutines.
+	wg sync.WaitGroup
+	// Global ctx: should only be cancelled by the signal handler.
+	ctx, cf = context.WithCancel(context.Background())
+	// Args.
+	rootDir     string
+	unsafePrint bool
+	print0      bool
+)
 
 var rootCmd = &cobra.Command{
 	Version: "v0.0.1",
@@ -26,10 +36,17 @@ This application is under construction.`,
 		//}
 		return nil
 	},
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		signals.LaunchSignalHandler(ctx, cf, &wg)
+	},
 	// args[0] is the first actual argument, and not the name of the program.
 	// Only arguments not caught by our flag definitions will be present.
 	Run: func(cmd *cobra.Command, args []string) {
-		find.Find(args, rootDir, unsafePrint, print0)
+		find.Find(ctx, args, rootDir, unsafePrint, print0)
+	},
+	PersistentPostRun: func(cmd *cobra.Command, args []string) {
+		cf()
+		wg.Wait()
 	},
 }
 
