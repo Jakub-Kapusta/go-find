@@ -7,27 +7,36 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 )
 
+type fileInfo struct {
+	path string
+	d    fs.DirEntry
+}
 type finder struct {
-	ctx         context.Context
-	wg          sync.WaitGroup
-	w           *bufio.Writer
-	printer     chan<- string // Close when done.
-	rootDir     string
-	unsafePrint bool
-	print0      bool
+	ctx          context.Context
+	wg           sync.WaitGroup
+	w            *bufio.Writer
+	printer      chan<- *fileInfo // Close when done.
+	rootDir      string
+	isSearchPath bool
+	searchPath   string
+	unsafePrint  bool
+	print0       bool
 }
 
-func newFinder(ctx context.Context, f *os.File, rootDir string, unsafePrint bool, print0 bool) *finder {
+func newFinder(ctx context.Context, f *os.File, rootDir string, isSearchPath bool, searchPath string, unsafePrint, print0 bool) *finder {
 	return &finder{
 		ctx: ctx,
 		// 4 MiB buffer
-		w:           bufio.NewWriterSize(f, 2048*2048),
-		rootDir:     rootDir,
-		unsafePrint: unsafePrint,
-		print0:      print0,
+		w:            bufio.NewWriterSize(f, 2048*2048),
+		rootDir:      rootDir,
+		isSearchPath: isSearchPath,
+		searchPath:   searchPath,
+		unsafePrint:  unsafePrint,
+		print0:       print0,
 	}
 }
 
@@ -54,8 +63,18 @@ func (f *finder) run() error {
 				os.Stderr.WriteString(err.Error() + newlineString)
 				return nil
 			}
+			fi := &fileInfo{
+				path: path,
+				d:    d,
+			}
 
-			f.printer <- path
+			if f.isSearchPath {
+				if strings.Contains(path, f.searchPath) {
+					f.printer <- fi
+				}
+			} else {
+				f.printer <- fi
+			}
 			return nil
 		}
 	})

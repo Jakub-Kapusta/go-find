@@ -22,7 +22,6 @@ func LaunchSignalHandler(ctx context.Context, cf context.CancelFunc, wg *sync.Wa
 		for {
 			select {
 			case <-ctx.Done():
-				os.Stderr.WriteString("ctx.Done() in signal handler\n")
 				return
 			case <-c:
 				// Add Leading newline because preceding output might be broken in case of cancel.

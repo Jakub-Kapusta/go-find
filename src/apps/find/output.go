@@ -11,19 +11,19 @@ import (
 // The sender will stop sending and close the channel if the ctx is cancelled.
 // The printer should then process its buffer and exit on chanel close.
 // Slower but prevents unexpected things to happen to our terminal.
-func NewSafePrinter(f *finder, lineEnding string) chan<- string {
-	c := make(chan string, 32)
+func NewSafePrinter(f *finder, lineEnding string) chan<- *fileInfo {
+	c := make(chan *fileInfo, 32)
 
 	f.wg.Add(1)
-	go func(c <-chan string, f *finder) {
+	go func(c <-chan *fileInfo, f *finder) {
 		defer f.wg.Done()
 		for {
 			select {
-			case msg, ok := <-c:
+			case fi, ok := <-c:
 				if !ok {
 					return
 				}
-				rs := []rune(msg)
+				rs := []rune(fi.path)
 
 				// Most runes will be 2 bytes so allocate at least len(rs)*2.
 				// *4 should prevent extra allocations in for all utf-8 strings.
@@ -36,13 +36,17 @@ func NewSafePrinter(f *finder, lineEnding string) chan<- string {
 					} else {
 						// Control characters will be replaced with a string representation of their unicode code.
 						// Example: U+0090 will be printed as the string literal U+0090, and not as the actual unicode code point.
-						os.Stderr.WriteString(fmt.Sprintf("String contains unicode control characters: %q\n", msg))
+						os.Stderr.WriteString(fmt.Sprintf("String contains unicode control characters: %q\n", fi.path))
 						ret = append(ret, []byte(fmt.Sprintf("%U", r))...)
 					}
 
 				}
 
-				// Add line ending.
+				// Append trailing / for directories
+				if fi.d.IsDir() {
+					ret = append(ret, '/')
+				}
+				// Append line ending.
 				ret = append(ret, []byte(lineEnding)...)
 
 				_, err := f.w.Write(ret)
@@ -62,19 +66,27 @@ func NewSafePrinter(f *finder, lineEnding string) chan<- string {
 // The sender will stop sending and close the channel if the ctx is cancelled.
 // The printer should then process its buffer and exit on chanel close.
 // Fast but unexpected things can happen to our terminal.
-func NewUnsafePrinter(f *finder, lineEnding string) chan<- string {
-	c := make(chan string, 32)
+func NewUnsafePrinter(f *finder, lineEnding string) chan<- *fileInfo {
+	c := make(chan *fileInfo, 32)
 
 	f.wg.Add(1)
-	go func(c <-chan string, f *finder) {
+	go func(c <-chan *fileInfo, f *finder) {
 		defer f.wg.Done()
 		for {
 			select {
-			case msg, ok := <-c:
+			case fi, ok := <-c:
 				if !ok {
 					return
 				}
-				_, err := f.w.WriteString(msg + lineEnding)
+				ret := []byte(fi.path)
+
+				// Append trailing / for directories
+				if fi.d.IsDir() {
+					ret = append(ret, '/')
+				}
+				ret = append(ret, []byte(lineEnding)...)
+
+				_, err := f.w.Write(ret)
 				if err != nil {
 					// TODO implement better logging.
 					fmt.Println(err)

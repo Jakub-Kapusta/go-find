@@ -16,10 +16,6 @@ var (
 	wg sync.WaitGroup
 	// Global ctx: should only be cancelled by the signal handler.
 	ctx, cf = context.WithCancel(context.Background())
-	// Args.
-	rootDir     string
-	unsafePrint bool
-	print0      bool
 )
 
 var rootCmd = &cobra.Command{
@@ -37,12 +33,16 @@ This application is under construction.`,
 		return nil
 	},
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		if err := validateFlags(); err != nil {
+			os.Stderr.WriteString(err.Error() + "\n")
+			os.Exit(1)
+		}
 		signals.LaunchSignalHandler(ctx, cf, &wg)
 	},
 	// args[0] is the first actual argument, and not the name of the program.
 	// Only arguments not caught by our flag definitions will be present.
 	Run: func(cmd *cobra.Command, args []string) {
-		find.Find(ctx, args, rootDir, unsafePrint, print0)
+		find.Find(ctx, args, rootDir, isSearchPath, searchPath, unsafePrint, print0)
 	},
 	PersistentPostRun: func(cmd *cobra.Command, args []string) {
 		cf()
@@ -51,11 +51,7 @@ This application is under construction.`,
 }
 
 func init() {
-	// Global Flags
-	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.go-find.yaml)")
-	rootCmd.PersistentFlags().StringVarP(&rootDir, "root_dir", "r", "./", "directory to search in")
-	rootCmd.PersistentFlags().BoolVarP(&unsafePrint, "unsafe_print", "u", false, "output control characters to the terminal without checks")
-	rootCmd.PersistentFlags().BoolVarP(&print0, "print0", "0", false, "print the full file name on the standard output, followed by a null character (instead of the default newline character)")
+	setFlags()
 }
 
 func Execute() {
