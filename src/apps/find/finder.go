@@ -2,7 +2,6 @@
 package find
 
 import (
-	"bufio"
 	"context"
 	"io/fs"
 	"os"
@@ -11,48 +10,34 @@ import (
 	"sync"
 )
 
-type fileInfo struct {
+type FileInfo struct {
 	path string
 	d    fs.DirEntry
 }
-type finder struct {
+
+type Finder struct {
 	ctx          context.Context
 	wg           sync.WaitGroup
-	w            *bufio.Writer
-	printer      chan<- *fileInfo // Close when done.
+	p            *printHandler
 	rootDir      string
 	isSearchPath bool
 	searchPath   string
-	unsafePrint  bool
-	print0       bool
 }
 
-func newFinder(ctx context.Context, f *os.File, rootDir string, isSearchPath bool, searchPath string, unsafePrint, print0 bool) *finder {
-	return &finder{
-		ctx: ctx,
-		// 4 MiB buffer
-		w:            bufio.NewWriterSize(f, 2048*2048),
+func NewFinder(ctx context.Context, f *os.File, rootDir string, isSearchPath bool, searchPath string, unsafePrint, print0 bool) *Finder {
+	var fi = &Finder{
+		ctx:          ctx,
 		rootDir:      rootDir,
 		isSearchPath: isSearchPath,
 		searchPath:   searchPath,
-		unsafePrint:  unsafePrint,
-		print0:       print0,
 	}
+
+	fi.p = NewPrintHandler(f, unsafePrint, print0)
+
+	return fi
 }
 
-func (f *finder) run() error {
-	var lineEnding string
-	if f.print0 {
-		lineEnding = nullString
-	} else {
-		lineEnding = newlineString
-	}
-
-	if f.unsafePrint {
-		f.printer = NewUnsafePrinter(f, lineEnding)
-	} else {
-		f.printer = NewSafePrinter(f, lineEnding)
-	}
+func (f *Finder) run() error {
 
 	err := filepath.WalkDir(f.rootDir, func(path string, d fs.DirEntry, err error) error {
 		select {
@@ -63,17 +48,17 @@ func (f *finder) run() error {
 				os.Stderr.WriteString(err.Error() + newlineString)
 				return nil
 			}
-			fi := &fileInfo{
+			fi := &FileInfo{
 				path: path,
 				d:    d,
 			}
 
 			if f.isSearchPath {
 				if strings.Contains(path, f.searchPath) {
-					f.printer <- fi
+					f.p.printer <- fi
 				}
 			} else {
-				f.printer <- fi
+				f.p.printer <- fi
 			}
 			return nil
 		}
@@ -84,11 +69,11 @@ func (f *finder) run() error {
 	return f.close()
 }
 
-func (f *finder) close() error {
-	close(f.printer)
+func (f *Finder) close() error {
+	f.p.close()
 	f.wg.Wait()
 
-	if err := f.w.Flush(); err != nil {
+	if err := f.p.w.Flush(); err != nil {
 		return err
 	}
 	return nil
