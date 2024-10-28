@@ -6,7 +6,7 @@ import (
 	"os"
 )
 
-func Find(ctx context.Context, args []string, rootDir string, isSearchPath bool, searchPath string, unsafePrint, print0 bool) {
+func Find(ctx context.Context, args []string, fio *FinderOptions, unsafePrint, print0 bool) {
 	// fmt.Println("Root dir: ", rootDir)
 	// if len(args) > 0 {
 	// 	fmt.Println("args: ", args)
@@ -14,7 +14,7 @@ func Find(ctx context.Context, args []string, rootDir string, isSearchPath bool,
 
 	ph := NewPrintHandler(os.Stdout, unsafePrint, print0)
 
-	f := NewFinder(ctx, ph.getPrintChan(), rootDir, searchPath, isSearchPath)
+	f := NewFinder(ctx, ph.getPrintChan(), fio)
 	f.Run()
 	// First close finder, then printer
 	f.Close()

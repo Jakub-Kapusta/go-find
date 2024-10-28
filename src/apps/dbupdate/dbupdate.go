@@ -16,7 +16,15 @@ func DbUpdate(ctx context.Context, args []string, rootDir string, isSearchPath b
 		return
 	}
 
-	fi := find.NewFinder(ctx, dbh.getChan(), rootDir, searchPath, isSearchPath)
+	fi := find.NewFinder(
+		ctx,
+		dbh.getChan(),
+		&find.FinderOptions{
+			RootDir:      rootDir,
+			IsSearchPath: isSearchPath,
+			SearchPath:   searchPath,
+		},
+	)
 	fi.Run()
 
 	if err := dbh.run(); err != nil {

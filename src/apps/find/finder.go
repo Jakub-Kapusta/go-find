@@ -10,6 +10,11 @@ import (
 	"sync"
 )
 
+type FinderOptions struct {
+	RootDir      string
+	IsSearchPath bool
+	SearchPath   string
+}
 type FileInfo struct {
 	Path string
 	D    fs.DirEntry
@@ -19,19 +24,15 @@ type Finder struct {
 	ctx context.Context
 	wg  sync.WaitGroup
 	// Be sure to close after use.
-	printChan    chan<- *FileInfo
-	rootDir      string
-	isSearchPath bool
-	searchPath   string
+	printChan chan<- *FileInfo
+	fio       *FinderOptions
 }
 
-func NewFinder(ctx context.Context, printChan chan<- *FileInfo, rootDir, searchPath string, isSearchPath bool) *Finder {
+func NewFinder(ctx context.Context, printChan chan<- *FileInfo, fio *FinderOptions) *Finder {
 	var fi = &Finder{
-		ctx:          ctx,
-		printChan:    printChan,
-		rootDir:      rootDir,
-		isSearchPath: isSearchPath,
-		searchPath:   searchPath,
+		ctx:       ctx,
+		printChan: printChan,
+		fio:       fio,
 	}
 
 	return fi
@@ -41,7 +42,7 @@ func (f *Finder) Run() {
 	f.wg.Add(1)
 	go func(f *Finder) {
 		defer f.wg.Done()
-		err := filepath.WalkDir(f.rootDir, func(path string, d fs.DirEntry, err error) error {
+		err := filepath.WalkDir(f.fio.RootDir, func(path string, d fs.DirEntry, err error) error {
 			select {
 			case <-f.ctx.Done():
 				return f.ctx.Err()
@@ -55,8 +56,8 @@ func (f *Finder) Run() {
 					D:    d,
 				}
 
-				if f.isSearchPath {
-					if strings.Contains(path, f.searchPath) {
+				if f.fio.IsSearchPath {
+					if strings.Contains(path, f.fio.SearchPath) {
 						f.printChan <- fi
 					}
 				} else {
