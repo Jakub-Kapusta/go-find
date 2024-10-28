@@ -12,12 +12,13 @@ import (
 type printHandler struct {
 	wg          sync.WaitGroup
 	w           *bufio.Writer
-	printChan   chan<- *FileInfo // Close when done.
+	printChan   chan *FileInfo // Close when done.
 	unsafePrint bool
 	print0      bool
 	lineEnding  string
 }
 
+// User of printChan should close it.
 func NewPrintHandler(f *os.File, unsafePrint, print0 bool) *printHandler {
 
 	ph := &printHandler{
@@ -88,17 +89,10 @@ func (ph *printHandler) unsafePrinter(c <-chan *FileInfo) {
 			if !ok {
 				return
 			}
-			ret := []byte(fi.path)
-
-			// Append trailing / for directories
-			if fi.d.IsDir() {
-				ret = append(ret, '/')
-			}
-			ret = append(ret, []byte(ph.lineEnding)...)
-
-			_, err := ph.w.Write(ret)
+			_, err := ph.w.WriteString(
+				fmt.Sprintf("%s%s", fi.path, ph.lineEnding),
+			)
 			if err != nil {
-				// TODO implement better logging.
 				fmt.Println(err)
 			}
 		}
@@ -111,18 +105,22 @@ func (ph *printHandler) run() {
 	if ph.unsafePrint {
 		// Slower but prevents unexpected things to happen to our terminal.
 		ph.wg.Add(1)
-		go ph.safePrinter(c)
+		go ph.unsafePrinter(c)
 	} else {
 		// Fast but unexpected things can happen to our terminal.
 		ph.wg.Add(1)
-		go ph.unsafePrinter(c)
+		go ph.safePrinter(c)
 	}
 
 	ph.printChan = c
 }
 
+// The user should close this channel when done sending.
+func (ph *printHandler) getPrintChan() chan<- *FileInfo {
+	return ph.printChan
+}
+
 func (ph *printHandler) close() {
-	close(ph.printChan)
 	ph.wg.Wait()
 	if err := ph.w.Flush(); err != nil {
 		os.Stderr.WriteString(err.Error() + "\n")

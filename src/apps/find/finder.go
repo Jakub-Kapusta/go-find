@@ -16,8 +16,9 @@ type FileInfo struct {
 }
 
 type Finder struct {
-	ctx          context.Context
-	wg           sync.WaitGroup
+	ctx context.Context
+	wg  sync.WaitGroup
+	// Be sure to close after use.
 	printChan    chan<- *FileInfo
 	rootDir      string
 	isSearchPath bool
@@ -68,7 +69,9 @@ func (f *Finder) run() error {
 	return f.close()
 }
 
+// Do not call directly.
 func (f *Finder) close() error {
+	close(f.printChan)
 	f.wg.Wait()
 	return nil
 }

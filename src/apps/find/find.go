@@ -15,10 +15,10 @@ func Find(ctx context.Context, args []string, rootDir string, isSearchPath bool,
 
 	ph := NewPrintHandler(os.Stdout, unsafePrint, print0)
 
-	f := NewFinder(ctx, ph.printChan, rootDir, isSearchPath, searchPath, unsafePrint, print0)
+	f := NewFinder(ctx, ph.getPrintChan(), rootDir, isSearchPath, searchPath, unsafePrint, print0)
 	if err := f.run(); err != nil {
 		fmt.Println(err)
 	}
-	f.close()
+	// First close finder, then printer
 	ph.close()
 }
