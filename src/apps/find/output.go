@@ -12,7 +12,7 @@ import (
 type printHandler struct {
 	wg          sync.WaitGroup
 	w           *bufio.Writer
-	printer     chan<- *FileInfo // Close when done.
+	printChan   chan<- *FileInfo // Close when done.
 	unsafePrint bool
 	print0      bool
 	lineEnding  string
@@ -118,10 +118,13 @@ func (ph *printHandler) run() {
 		go ph.unsafePrinter(c)
 	}
 
-	ph.printer = c
+	ph.printChan = c
 }
 
 func (ph *printHandler) close() {
-	close(ph.printer)
+	close(ph.printChan)
 	ph.wg.Wait()
+	if err := ph.w.Flush(); err != nil {
+		os.Stderr.WriteString(err.Error() + "\n")
+	}
 }

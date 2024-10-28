@@ -18,21 +18,20 @@ type FileInfo struct {
 type Finder struct {
 	ctx          context.Context
 	wg           sync.WaitGroup
-	p            *printHandler
+	printChan    chan<- *FileInfo
 	rootDir      string
 	isSearchPath bool
 	searchPath   string
 }
 
-func NewFinder(ctx context.Context, f *os.File, rootDir string, isSearchPath bool, searchPath string, unsafePrint, print0 bool) *Finder {
+func NewFinder(ctx context.Context, printChan chan<- *FileInfo, rootDir string, isSearchPath bool, searchPath string, unsafePrint, print0 bool) *Finder {
 	var fi = &Finder{
 		ctx:          ctx,
+		printChan:    printChan,
 		rootDir:      rootDir,
 		isSearchPath: isSearchPath,
 		searchPath:   searchPath,
 	}
-
-	fi.p = NewPrintHandler(f, unsafePrint, print0)
 
 	return fi
 }
@@ -55,10 +54,10 @@ func (f *Finder) run() error {
 
 			if f.isSearchPath {
 				if strings.Contains(path, f.searchPath) {
-					f.p.printer <- fi
+					f.printChan <- fi
 				}
 			} else {
-				f.p.printer <- fi
+				f.printChan <- fi
 			}
 			return nil
 		}
@@ -70,11 +69,6 @@ func (f *Finder) run() error {
 }
 
 func (f *Finder) close() error {
-	f.p.close()
 	f.wg.Wait()
-
-	if err := f.p.w.Flush(); err != nil {
-		return err
-	}
 	return nil
 }

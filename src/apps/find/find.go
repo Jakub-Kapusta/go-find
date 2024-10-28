@@ -13,9 +13,12 @@ func Find(ctx context.Context, args []string, rootDir string, isSearchPath bool,
 	// 	fmt.Println("args: ", args)
 	// }
 
-	f := NewFinder(ctx, os.Stdout, rootDir, isSearchPath, searchPath, unsafePrint, print0)
+	ph := NewPrintHandler(os.Stdout, unsafePrint, print0)
+
+	f := NewFinder(ctx, ph.printChan, rootDir, isSearchPath, searchPath, unsafePrint, print0)
 	if err := f.run(); err != nil {
 		fmt.Println(err)
 	}
-
+	f.close()
+	ph.close()
 }
