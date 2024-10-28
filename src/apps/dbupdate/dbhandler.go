@@ -15,11 +15,11 @@ type dbHandler struct {
 	ctx          context.Context
 	wg           sync.WaitGroup
 	db           *sql.DB
+	tx           *sql.Tx // Set to nil before creating actual transaction.
 	c            chan *find.FileInfo
 	rootDir      string
 	isSearchPath bool
 	searchPath   string
-	paths        []string
 }
 
 func newDbHandler(ctx context.Context, rootDir string, isSearchPath bool, searchPath string) (*dbHandler, error) {
@@ -30,6 +30,7 @@ func newDbHandler(ctx context.Context, rootDir string, isSearchPath bool, search
 	return &dbHandler{
 		ctx:          ctx,
 		db:           db,
+		tx:           nil,
 		c:            make(chan *find.FileInfo, 32),
 		rootDir:      rootDir,
 		isSearchPath: isSearchPath,
@@ -39,8 +40,9 @@ func newDbHandler(ctx context.Context, rootDir string, isSearchPath bool, search
 
 func (dbh *dbHandler) run() error {
 	// TODO do something about this error.
+	var rollback bool
 	defer func() {
-		if err := dbh.close(); err != nil {
+		if err := dbh.close(rollback); err != nil {
 			os.Stderr.WriteString(err.Error() + "\n")
 		}
 	}()
@@ -54,16 +56,40 @@ func (dbh *dbHandler) run() error {
 		return err
 	}
 
+	if dbh.tx == nil {
+		dbh.tx, err = dbh.db.Begin()
+		if err != nil {
+			rollback = true
+			return err
+		}
+	} else {
+		rollback = true
+		return fmt.Errorf("something wrong with tx")
+	}
+
+	// Not using a single transaction will make things incredibly slow.
+	stmt, err := dbh.tx.Prepare("INSERT INTO foo (path) VALUES (?);")
+	if err != nil {
+		rollback = true
+		return err
+	}
+	defer stmt.Close()
+
 	for {
 		select {
 		case <-dbh.ctx.Done():
+			// TODO add rollback
+			rollback = true
 			return dbh.ctx.Err()
-		case fi, ok := <-dbh.c:
-			if !ok {
+		case fi, isOpen := <-dbh.c:
+			if !isOpen {
 				return nil
 			}
-			dbh.paths = append(dbh.paths, fi.Path)
-
+			_, err = stmt.Exec(fi.Path)
+			if err != nil {
+				rollback = true
+				fmt.Println(err)
+			}
 		}
 
 	}
@@ -74,34 +100,19 @@ func (dbh *dbHandler) getChan() chan<- *find.FileInfo {
 }
 
 // Do not call directly.
-func (dbh *dbHandler) close() error {
-	fmt.Println("inserting")
-	fmt.Println(len(dbh.paths))
-	cnt := 0
-
-	tx, err := dbh.db.Begin()
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	// Not using a sigle transaction will make things incredibly slow.
-	stmt, err := tx.Prepare("INSERT INTO foo (path) VALUES (?);")
-	if err != nil {
-		return err
-	}
-	defer stmt.Close()
-
-	for _, p := range dbh.paths {
-		cnt += 1
-		fmt.Println(cnt)
-		_, err = stmt.Exec(p)
-		if err != nil {
-			fmt.Println(err)
+func (dbh *dbHandler) close(rollback bool) error {
+	if dbh.tx != nil {
+		if rollback {
+			fmt.Println("ROLLBACK")
+			if err := dbh.tx.Rollback(); err != nil {
+				// TODO wait for the wg
+				return err
+			}
+		} else {
+			if err := dbh.tx.Commit(); err != nil {
+				return err
+			}
 		}
-	}
-	err = tx.Commit()
-	if err != nil {
-		fmt.Println(err)
 	}
 
 	dbh.wg.Wait()
