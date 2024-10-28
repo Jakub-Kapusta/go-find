@@ -20,6 +20,7 @@ type dbHandler struct {
 	rootDir      string
 	isSearchPath bool
 	searchPath   string
+	skipDirs     []string
 }
 
 func newDbHandler(ctx context.Context, rootDir string, isSearchPath bool, searchPath string) (*dbHandler, error) {
@@ -35,6 +36,14 @@ func newDbHandler(ctx context.Context, rootDir string, isSearchPath bool, search
 		rootDir:      rootDir,
 		isSearchPath: isSearchPath,
 		searchPath:   searchPath,
+		skipDirs: []string{
+			"/dev",
+			"/mnt",
+			"/proc",
+			"/run",
+			"/sys",
+			"/tmp",
+		},
 	}, nil
 }
 
