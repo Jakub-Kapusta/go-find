@@ -3,26 +3,26 @@ package dbupdate
 
 import (
 	"context"
-	"database/sql"
-	"fmt"
 	"os"
 
+	"github.com/Jakub-Kapusta/go-find/apps/find"
 	_ "github.com/mattn/go-sqlite3"
 )
 
 func DbUpdate(ctx context.Context, args []string, rootDir string, isSearchPath bool, searchPath string) {
-	db, err := sql.Open("sqlite3", "./test.db")
+	dbh, err := newDbHandler(ctx, rootDir, isSearchPath, searchPath)
 	if err != nil {
 		os.Stderr.WriteString(err.Error() + "\n")
+		return
 	}
-	defer db.Close()
 
-	var version string
-	err = db.QueryRow("SELECT SQLITE_VERSION()").Scan(&version)
+	fi := find.NewFinder(ctx, dbh.getChan(), rootDir, searchPath, isSearchPath)
+	fi.Run()
 
-	if err != nil {
+	if err := dbh.run(); err != nil {
 		os.Stderr.WriteString(err.Error() + "\n")
+		return
 	}
 
-	fmt.Println(version)
+	fi.Close()
 }

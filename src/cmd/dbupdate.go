@@ -10,7 +10,7 @@ import (
 
 var dbupdateCmd = &cobra.Command{
 	Version: "v0.0.1",
-	Use:     "dbfind TODO",
+	Use:     "dbupdate TODO",
 	Short:   "Find files and directories and cache them in a database.",
 	Long: `A partial GNU findutils replacement implemented ing GO.
 

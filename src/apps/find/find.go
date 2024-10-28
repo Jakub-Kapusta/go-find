@@ -3,7 +3,6 @@ package find
 
 import (
 	"context"
-	"fmt"
 	"os"
 )
 
@@ -15,10 +14,9 @@ func Find(ctx context.Context, args []string, rootDir string, isSearchPath bool,
 
 	ph := NewPrintHandler(os.Stdout, unsafePrint, print0)
 
-	f := NewFinder(ctx, ph.getPrintChan(), rootDir, isSearchPath, searchPath, unsafePrint, print0)
-	if err := f.run(); err != nil {
-		fmt.Println(err)
-	}
+	f := NewFinder(ctx, ph.getPrintChan(), rootDir, searchPath, isSearchPath)
+	f.Run()
 	// First close finder, then printer
+	f.Close()
 	ph.close()
 }

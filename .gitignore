@@ -26,3 +26,4 @@ go.work.sum
 
 # Default build file
 **/go-find
+**/test.db

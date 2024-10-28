@@ -47,7 +47,7 @@ func (ph *printHandler) safePrinter(c <-chan *FileInfo) {
 			if !ok {
 				return
 			}
-			rs := []rune(fi.path)
+			rs := []rune(fi.Path)
 
 			// Most runes will be 2 bytes so allocate at least len(rs)*2.
 			// *4 should prevent extra allocations in for all utf-8 strings.
@@ -60,14 +60,14 @@ func (ph *printHandler) safePrinter(c <-chan *FileInfo) {
 				} else {
 					// Control characters will be replaced with a string representation of their unicode code.
 					// Example: U+0090 will be printed as the string literal U+0090, and not as the actual unicode code point.
-					os.Stderr.WriteString(fmt.Sprintf("String contains unicode control characters: %q\n", fi.path))
+					os.Stderr.WriteString(fmt.Sprintf("String contains unicode control characters: %q\n", fi.Path))
 					ret = append(ret, []byte(fmt.Sprintf("%U", r))...)
 				}
 
 			}
 
 			// Append trailing / for directories
-			if fi.d.IsDir() {
+			if fi.D.IsDir() {
 				ret = append(ret, '/')
 			}
 			// Append line ending.
@@ -90,7 +90,7 @@ func (ph *printHandler) unsafePrinter(c <-chan *FileInfo) {
 				return
 			}
 			_, err := ph.w.WriteString(
-				fmt.Sprintf("%s%s", fi.path, ph.lineEnding),
+				fmt.Sprintf("%s%s", fi.Path, ph.lineEnding),
 			)
 			if err != nil {
 				fmt.Println(err)
