@@ -15,6 +15,10 @@ type FileInfoSinker interface {
 	GetChan() chan<- *FileInfo
 }
 
+type FileInfoDumper interface {
+	GetChan() <-chan *FileInfo
+}
+
 type FileInfo struct {
 	Path string
 	D    fs.DirEntry
