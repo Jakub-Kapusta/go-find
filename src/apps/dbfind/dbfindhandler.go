@@ -6,19 +6,19 @@ import (
 	"database/sql"
 	"sync"
 
-	"github.com/Jakub-Kapusta/go-find/apps/fileinfo"
+	"github.com/Jakub-Kapusta/go-find/apps/types"
 )
 
 type dbFindHandler struct {
 	ctx          context.Context
 	wg           sync.WaitGroup
 	db           *sql.DB
-	sink         chan<- *fileinfo.FileInfo
+	sink         chan<- *types.FileInfo
 	isSearchPath bool
 	searchPath   string
 }
 
-func newDbFindHandler(ctx context.Context, sink chan<- *fileinfo.FileInfo, isSearchPath bool, searchPath string) (*dbFindHandler, error) {
+func newDbFindHandler(ctx context.Context, sink chan<- *types.FileInfo, isSearchPath bool, searchPath string) (*dbFindHandler, error) {
 	db, err := sql.Open("sqlite3", "./test.db")
 	if err != nil {
 		return nil, err

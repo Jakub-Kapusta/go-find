@@ -10,6 +10,8 @@ import (
 )
 
 func DbUpdate(ctx context.Context, args []string, rootDir string, isSearchPath bool, searchPath string) {
+	var dbh dbUpdater
+
 	dbh, err := newDbUpdateHandler(ctx, rootDir, isSearchPath, searchPath)
 	if err != nil {
 		os.Stderr.WriteString(err.Error() + "\n")
@@ -18,7 +20,7 @@ func DbUpdate(ctx context.Context, args []string, rootDir string, isSearchPath b
 
 	fi := find.NewFinder(
 		ctx,
-		dbh.getChan(),
+		dbh.GetChan(),
 		&find.FinderOptions{
 			RootDir:      rootDir,
 			IsSearchPath: isSearchPath,
@@ -27,7 +29,7 @@ func DbUpdate(ctx context.Context, args []string, rootDir string, isSearchPath b
 	)
 	fi.Run()
 
-	if err := dbh.run(); err != nil {
+	if err := dbh.Run(); err != nil {
 		os.Stderr.WriteString(err.Error() + "\n")
 		return
 	}

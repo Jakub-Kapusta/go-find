@@ -8,15 +8,21 @@ import (
 	"os"
 	"sync"
 
-	"github.com/Jakub-Kapusta/go-find/apps/fileinfo"
+	"github.com/Jakub-Kapusta/go-find/apps/types"
 )
+
+type dbUpdater interface {
+	types.Runner
+	types.Closer
+	types.FileInfoSinker
+}
 
 type dbUpdateHandler struct {
 	ctx          context.Context
 	wg           sync.WaitGroup
 	db           *sql.DB
 	tx           *sql.Tx // Set to nil before creating actual transaction.
-	srcChan      chan *fileinfo.FileInfo
+	srcChan      chan *types.FileInfo
 	rootDir      string
 	isSearchPath bool
 	searchPath   string
@@ -34,7 +40,7 @@ func newDbUpdateHandler(ctx context.Context, rootDir string, isSearchPath bool, 
 		ctx:          ctx,
 		db:           db,
 		tx:           nil,
-		srcChan:      make(chan *fileinfo.FileInfo, 32),
+		srcChan:      make(chan *types.FileInfo, 32),
 		rootDir:      rootDir,
 		isSearchPath: isSearchPath,
 		searchPath:   searchPath,
@@ -49,11 +55,11 @@ func newDbUpdateHandler(ctx context.Context, rootDir string, isSearchPath bool, 
 	}, nil
 }
 
-func (dbh *dbUpdateHandler) run() error {
+func (dbh *dbUpdateHandler) Run() error {
 	// TODO do something about this error.
 	var rollback bool
 	defer func() {
-		if err := dbh.close(rollback); err != nil {
+		if err := dbh.Close(rollback); err != nil {
 			os.Stderr.WriteString(err.Error() + "\n")
 		}
 	}()
@@ -111,12 +117,12 @@ func (dbh *dbUpdateHandler) run() error {
 	}
 }
 
-func (dbh *dbUpdateHandler) getChan() chan<- *fileinfo.FileInfo {
+func (dbh *dbUpdateHandler) GetChan() chan<- *types.FileInfo {
 	return dbh.srcChan
 }
 
 // Do not call directly.
-func (dbh *dbUpdateHandler) close(rollback bool) error {
+func (dbh *dbUpdateHandler) Close(rollback bool) error {
 	if dbh.tx != nil {
 		if rollback {
 			fmt.Println("ROLLBACK")

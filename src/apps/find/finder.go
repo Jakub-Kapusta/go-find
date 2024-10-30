@@ -9,7 +9,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/Jakub-Kapusta/go-find/apps/fileinfo"
+	"github.com/Jakub-Kapusta/go-find/apps/types"
 	"github.com/Jakub-Kapusta/go-find/internal/printer"
 )
 
@@ -23,11 +23,11 @@ type Finder struct {
 	ctx context.Context
 	wg  sync.WaitGroup
 	// Be sure to close after use.
-	sink chan<- *fileinfo.FileInfo
+	sink chan<- *types.FileInfo
 	fio  *FinderOptions
 }
 
-func NewFinder(ctx context.Context, sink chan<- *fileinfo.FileInfo, fio *FinderOptions) *Finder {
+func NewFinder(ctx context.Context, sink chan<- *types.FileInfo, fio *FinderOptions) *Finder {
 	var fi = &Finder{
 		ctx:  ctx,
 		sink: sink,
@@ -50,7 +50,7 @@ func (f *Finder) Run() {
 					os.Stderr.WriteString(err.Error() + printer.NewlineString)
 					return nil
 				}
-				fi := &fileinfo.FileInfo{
+				fi := &types.FileInfo{
 					Path: path,
 					D:    d,
 				}

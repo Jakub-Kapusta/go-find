@@ -8,13 +8,13 @@ import (
 	"sync"
 	"unicode"
 
-	"github.com/Jakub-Kapusta/go-find/apps/fileinfo"
+	"github.com/Jakub-Kapusta/go-find/apps/types"
 )
 
 type printHandler struct {
 	wg          sync.WaitGroup
 	w           *bufio.Writer
-	printChan   chan *fileinfo.FileInfo // Close when done.
+	printChan   chan *types.FileInfo // Close when done.
 	unsafePrint bool
 	print0      bool
 	lineEnding  string
@@ -41,7 +41,7 @@ func NewPrintHandler(f *os.File, unsafePrint, print0 bool) *printHandler {
 	return ph
 }
 
-func (ph *printHandler) safePrinter(c <-chan *fileinfo.FileInfo) {
+func (ph *printHandler) safePrinter(c <-chan *types.FileInfo) {
 	defer ph.wg.Done()
 	for {
 		select {
@@ -83,7 +83,7 @@ func (ph *printHandler) safePrinter(c <-chan *fileinfo.FileInfo) {
 		}
 	}
 }
-func (ph *printHandler) unsafePrinter(c <-chan *fileinfo.FileInfo) {
+func (ph *printHandler) unsafePrinter(c <-chan *types.FileInfo) {
 	defer ph.wg.Done()
 	for {
 		select {
@@ -102,7 +102,7 @@ func (ph *printHandler) unsafePrinter(c <-chan *fileinfo.FileInfo) {
 }
 
 func (ph *printHandler) run() {
-	c := make(chan *fileinfo.FileInfo, 32)
+	c := make(chan *types.FileInfo, 32)
 
 	if ph.unsafePrint {
 		// Slower but prevents unexpected things to happen to our terminal.
@@ -118,7 +118,7 @@ func (ph *printHandler) run() {
 }
 
 // The user should close this channel when done sending.
-func (ph *printHandler) GetPrintChan() chan<- *fileinfo.FileInfo {
+func (ph *printHandler) GetPrintChan() chan<- *types.FileInfo {
 	return ph.printChan
 }
 
