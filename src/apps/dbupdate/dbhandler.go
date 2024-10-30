@@ -28,6 +28,7 @@ func newDbHandler(ctx context.Context, rootDir string, isSearchPath bool, search
 	if err != nil {
 		return nil, err
 	}
+
 	return &dbHandler{
 		ctx:          ctx,
 		db:           db,
@@ -56,11 +57,7 @@ func (dbh *dbHandler) run() error {
 		}
 	}()
 
-	sqlStmt := `
-	CREATE TABLE IF NOT EXISTS foo (path TEXT NOT NULL PRIMARY KEY);
-	DELETE from foo;
-	`
-	_, err := dbh.db.Exec(sqlStmt)
+	_, err := dbh.db.Exec(prepDb)
 	if err != nil {
 		return err
 	}
@@ -76,8 +73,8 @@ func (dbh *dbHandler) run() error {
 		return fmt.Errorf("something wrong with tx")
 	}
 
-	// Not using a single transaction will make things incredibly slow.
-	stmt, err := dbh.tx.Prepare("INSERT INTO foo (path) VALUES (?);")
+	// Not using a single transaction and prepared statements will make things slow.
+	stmt, err := dbh.tx.Prepare(preparedInsert)
 	if err != nil {
 		rollback = true
 		return err
@@ -90,11 +87,20 @@ func (dbh *dbHandler) run() error {
 			// TODO add rollback
 			rollback = true
 			return dbh.ctx.Err()
+
 		case fi, isOpen := <-dbh.c:
 			if !isOpen {
 				return nil
 			}
-			_, err = stmt.Exec(fi.Path)
+
+			// Default to unknown type.
+			type_id := 0
+			if fi.D.IsDir() {
+				// Directory.
+				type_id = 1
+			}
+
+			_, err = stmt.Exec(fi.Path, type_id)
 			if err != nil {
 				rollback = true
 				fmt.Println(err)
