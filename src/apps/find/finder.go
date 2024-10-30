@@ -8,6 +8,9 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+
+	"github.com/Jakub-Kapusta/go-find/apps/fileinfo"
+	"github.com/Jakub-Kapusta/go-find/internal/printer"
 )
 
 type FinderOptions struct {
@@ -15,20 +18,16 @@ type FinderOptions struct {
 	IsSearchPath bool
 	SearchPath   string
 }
-type FileInfo struct {
-	Path string
-	D    fs.DirEntry
-}
 
 type Finder struct {
 	ctx context.Context
 	wg  sync.WaitGroup
 	// Be sure to close after use.
-	printChan chan<- *FileInfo
+	printChan chan<- *fileinfo.FileInfo
 	fio       *FinderOptions
 }
 
-func NewFinder(ctx context.Context, printChan chan<- *FileInfo, fio *FinderOptions) *Finder {
+func NewFinder(ctx context.Context, printChan chan<- *fileinfo.FileInfo, fio *FinderOptions) *Finder {
 	var fi = &Finder{
 		ctx:       ctx,
 		printChan: printChan,
@@ -48,10 +47,10 @@ func (f *Finder) Run() {
 				return f.ctx.Err()
 			default:
 				if err != nil {
-					os.Stderr.WriteString(err.Error() + newlineString)
+					os.Stderr.WriteString(err.Error() + printer.NewlineString)
 					return nil
 				}
-				fi := &FileInfo{
+				fi := &fileinfo.FileInfo{
 					Path: path,
 					D:    d,
 				}

@@ -1,5 +1,5 @@
 // Copyright © 2024 Jakub Kapusta <jakub-dev1@protonmail.com>
-package find
+package printer
 
 import (
 	"bufio"
@@ -7,12 +7,14 @@ import (
 	"os"
 	"sync"
 	"unicode"
+
+	"github.com/Jakub-Kapusta/go-find/apps/fileinfo"
 )
 
 type printHandler struct {
 	wg          sync.WaitGroup
 	w           *bufio.Writer
-	printChan   chan *FileInfo // Close when done.
+	printChan   chan *fileinfo.FileInfo // Close when done.
 	unsafePrint bool
 	print0      bool
 	lineEnding  string
@@ -29,9 +31,9 @@ func NewPrintHandler(f *os.File, unsafePrint, print0 bool) *printHandler {
 	}
 
 	if print0 {
-		ph.lineEnding = nullString
+		ph.lineEnding = NullString
 	} else {
-		ph.lineEnding = newlineString
+		ph.lineEnding = NewlineString
 	}
 
 	ph.run()
@@ -39,7 +41,7 @@ func NewPrintHandler(f *os.File, unsafePrint, print0 bool) *printHandler {
 	return ph
 }
 
-func (ph *printHandler) safePrinter(c <-chan *FileInfo) {
+func (ph *printHandler) safePrinter(c <-chan *fileinfo.FileInfo) {
 	defer ph.wg.Done()
 	for {
 		select {
@@ -81,7 +83,7 @@ func (ph *printHandler) safePrinter(c <-chan *FileInfo) {
 		}
 	}
 }
-func (ph *printHandler) unsafePrinter(c <-chan *FileInfo) {
+func (ph *printHandler) unsafePrinter(c <-chan *fileinfo.FileInfo) {
 	defer ph.wg.Done()
 	for {
 		select {
@@ -100,7 +102,7 @@ func (ph *printHandler) unsafePrinter(c <-chan *FileInfo) {
 }
 
 func (ph *printHandler) run() {
-	c := make(chan *FileInfo, 32)
+	c := make(chan *fileinfo.FileInfo, 32)
 
 	if ph.unsafePrint {
 		// Slower but prevents unexpected things to happen to our terminal.
@@ -116,11 +118,11 @@ func (ph *printHandler) run() {
 }
 
 // The user should close this channel when done sending.
-func (ph *printHandler) getPrintChan() chan<- *FileInfo {
+func (ph *printHandler) GetPrintChan() chan<- *fileinfo.FileInfo {
 	return ph.printChan
 }
 
-func (ph *printHandler) close() {
+func (ph *printHandler) Close() {
 	ph.wg.Wait()
 	if err := ph.w.Flush(); err != nil {
 		os.Stderr.WriteString(err.Error() + "\n")

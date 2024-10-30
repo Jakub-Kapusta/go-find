@@ -4,6 +4,8 @@ package find
 import (
 	"context"
 	"os"
+
+	"github.com/Jakub-Kapusta/go-find/internal/printer"
 )
 
 func Find(ctx context.Context, args []string, fio *FinderOptions, unsafePrint, print0 bool) {
@@ -12,11 +14,11 @@ func Find(ctx context.Context, args []string, fio *FinderOptions, unsafePrint, p
 	// 	fmt.Println("args: ", args)
 	// }
 
-	ph := NewPrintHandler(os.Stdout, unsafePrint, print0)
+	ph := printer.NewPrintHandler(os.Stdout, unsafePrint, print0)
 
-	f := NewFinder(ctx, ph.getPrintChan(), fio)
+	f := NewFinder(ctx, ph.GetPrintChan(), fio)
 	f.Run()
 	// First close finder, then printer
 	f.Close()
-	ph.close()
+	ph.Close()
 }

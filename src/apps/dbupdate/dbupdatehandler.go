@@ -8,7 +8,7 @@ import (
 	"os"
 	"sync"
 
-	"github.com/Jakub-Kapusta/go-find/apps/find"
+	"github.com/Jakub-Kapusta/go-find/apps/fileinfo"
 )
 
 type dbUpdateHandler struct {
@@ -16,7 +16,7 @@ type dbUpdateHandler struct {
 	wg           sync.WaitGroup
 	db           *sql.DB
 	tx           *sql.Tx // Set to nil before creating actual transaction.
-	c            chan *find.FileInfo
+	c            chan *fileinfo.FileInfo
 	rootDir      string
 	isSearchPath bool
 	searchPath   string
@@ -34,7 +34,7 @@ func newDbUpdateHandler(ctx context.Context, rootDir string, isSearchPath bool, 
 		ctx:          ctx,
 		db:           db,
 		tx:           nil,
-		c:            make(chan *find.FileInfo, 32),
+		c:            make(chan *fileinfo.FileInfo, 32),
 		rootDir:      rootDir,
 		isSearchPath: isSearchPath,
 		searchPath:   searchPath,
@@ -111,7 +111,7 @@ func (dbh *dbUpdateHandler) run() error {
 	}
 }
 
-func (dbh *dbUpdateHandler) getChan() chan<- *find.FileInfo {
+func (dbh *dbUpdateHandler) getChan() chan<- *fileinfo.FileInfo {
 	return dbh.c
 }
 
