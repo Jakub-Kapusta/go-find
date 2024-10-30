@@ -10,7 +10,7 @@ import (
 )
 
 func DbUpdate(ctx context.Context, args []string, rootDir string, isSearchPath bool, searchPath string) {
-	dbh, err := newDbHandler(ctx, rootDir, isSearchPath, searchPath)
+	dbh, err := newDbUpdateHandler(ctx, rootDir, isSearchPath, searchPath)
 	if err != nil {
 		os.Stderr.WriteString(err.Error() + "\n")
 		return

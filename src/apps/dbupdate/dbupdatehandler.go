@@ -11,7 +11,7 @@ import (
 	"github.com/Jakub-Kapusta/go-find/apps/find"
 )
 
-type dbHandler struct {
+type dbUpdateHandler struct {
 	ctx          context.Context
 	wg           sync.WaitGroup
 	db           *sql.DB
@@ -23,13 +23,14 @@ type dbHandler struct {
 	skipDirs     []string
 }
 
-func newDbHandler(ctx context.Context, rootDir string, isSearchPath bool, searchPath string) (*dbHandler, error) {
+// User must retrieve the channel using getChan(), and then close it when done.
+func newDbUpdateHandler(ctx context.Context, rootDir string, isSearchPath bool, searchPath string) (*dbUpdateHandler, error) {
 	db, err := sql.Open("sqlite3", "./test.db")
 	if err != nil {
 		return nil, err
 	}
 
-	return &dbHandler{
+	return &dbUpdateHandler{
 		ctx:          ctx,
 		db:           db,
 		tx:           nil,
@@ -48,7 +49,7 @@ func newDbHandler(ctx context.Context, rootDir string, isSearchPath bool, search
 	}, nil
 }
 
-func (dbh *dbHandler) run() error {
+func (dbh *dbUpdateHandler) run() error {
 	// TODO do something about this error.
 	var rollback bool
 	defer func() {
@@ -110,12 +111,12 @@ func (dbh *dbHandler) run() error {
 	}
 }
 
-func (dbh *dbHandler) getChan() chan<- *find.FileInfo {
+func (dbh *dbUpdateHandler) getChan() chan<- *find.FileInfo {
 	return dbh.c
 }
 
 // Do not call directly.
-func (dbh *dbHandler) close(rollback bool) error {
+func (dbh *dbUpdateHandler) close(rollback bool) error {
 	if dbh.tx != nil {
 		if rollback {
 			fmt.Println("ROLLBACK")

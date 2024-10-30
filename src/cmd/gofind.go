@@ -19,7 +19,7 @@ var (
 )
 
 var rootCmd = &cobra.Command{
-	Version: "v0.0.1",
+	Version: version,
 	Use:     "gofind TODO",
 	Short:   "Find files and directories.",
 	Long: `A partial GNU findutils replacement implemented ing GO.

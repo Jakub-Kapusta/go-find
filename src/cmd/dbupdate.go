@@ -1,6 +1,4 @@
-/*
-Copyright © 2024 NAME HERE <EMAIL ADDRESS>
-*/
+// Copyright © 2024 Jakub Kapusta <jakub-dev1@protonmail.com>
 package cmd
 
 import (
@@ -9,7 +7,7 @@ import (
 )
 
 var dbupdateCmd = &cobra.Command{
-	Version: "v0.0.1",
+	Version: version,
 	Use:     "dbupdate TODO",
 	Short:   "Find files and directories and cache them in a database.",
 	Long: `A partial GNU findutils replacement implemented ing GO.
