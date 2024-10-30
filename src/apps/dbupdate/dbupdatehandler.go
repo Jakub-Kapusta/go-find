@@ -16,7 +16,7 @@ type dbUpdateHandler struct {
 	wg           sync.WaitGroup
 	db           *sql.DB
 	tx           *sql.Tx // Set to nil before creating actual transaction.
-	c            chan *fileinfo.FileInfo
+	srcChan      chan *fileinfo.FileInfo
 	rootDir      string
 	isSearchPath bool
 	searchPath   string
@@ -34,7 +34,7 @@ func newDbUpdateHandler(ctx context.Context, rootDir string, isSearchPath bool, 
 		ctx:          ctx,
 		db:           db,
 		tx:           nil,
-		c:            make(chan *fileinfo.FileInfo, 32),
+		srcChan:      make(chan *fileinfo.FileInfo, 32),
 		rootDir:      rootDir,
 		isSearchPath: isSearchPath,
 		searchPath:   searchPath,
@@ -89,7 +89,7 @@ func (dbh *dbUpdateHandler) run() error {
 			rollback = true
 			return dbh.ctx.Err()
 
-		case fi, isOpen := <-dbh.c:
+		case fi, isOpen := <-dbh.srcChan:
 			if !isOpen {
 				return nil
 			}
@@ -112,7 +112,7 @@ func (dbh *dbUpdateHandler) run() error {
 }
 
 func (dbh *dbUpdateHandler) getChan() chan<- *fileinfo.FileInfo {
-	return dbh.c
+	return dbh.srcChan
 }
 
 // Do not call directly.

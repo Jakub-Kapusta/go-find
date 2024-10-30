@@ -5,18 +5,20 @@ import (
 	"context"
 	"database/sql"
 	"sync"
+
+	"github.com/Jakub-Kapusta/go-find/apps/fileinfo"
 )
 
 type dbFindHandler struct {
 	ctx          context.Context
 	wg           sync.WaitGroup
 	db           *sql.DB
-	c            chan string
+	sink         chan<- *fileinfo.FileInfo
 	isSearchPath bool
 	searchPath   string
 }
 
-func newDbFindHandler(ctx context.Context, isSearchPath bool, searchPath string) (*dbFindHandler, error) {
+func newDbFindHandler(ctx context.Context, sink chan<- *fileinfo.FileInfo, isSearchPath bool, searchPath string) (*dbFindHandler, error) {
 	db, err := sql.Open("sqlite3", "./test.db")
 	if err != nil {
 		return nil, err
@@ -25,7 +27,7 @@ func newDbFindHandler(ctx context.Context, isSearchPath bool, searchPath string)
 	return &dbFindHandler{
 		ctx:          ctx,
 		db:           db,
-		c:            make(chan string, 32),
+		sink:         sink,
 		isSearchPath: isSearchPath,
 		searchPath:   searchPath,
 	}, nil
@@ -33,10 +35,6 @@ func newDbFindHandler(ctx context.Context, isSearchPath bool, searchPath string)
 
 func (dbh *dbFindHandler) run() error {
 	return nil
-}
-
-func (dbfh *dbFindHandler) getChan() <-chan string {
-	return dbfh.c
 }
 
 // Do not call directly.

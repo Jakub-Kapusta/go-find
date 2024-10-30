@@ -23,15 +23,15 @@ type Finder struct {
 	ctx context.Context
 	wg  sync.WaitGroup
 	// Be sure to close after use.
-	printChan chan<- *fileinfo.FileInfo
-	fio       *FinderOptions
+	sink chan<- *fileinfo.FileInfo
+	fio  *FinderOptions
 }
 
-func NewFinder(ctx context.Context, printChan chan<- *fileinfo.FileInfo, fio *FinderOptions) *Finder {
+func NewFinder(ctx context.Context, sink chan<- *fileinfo.FileInfo, fio *FinderOptions) *Finder {
 	var fi = &Finder{
-		ctx:       ctx,
-		printChan: printChan,
-		fio:       fio,
+		ctx:  ctx,
+		sink: sink,
+		fio:  fio,
 	}
 
 	return fi
@@ -57,10 +57,10 @@ func (f *Finder) Run() {
 
 				if f.fio.IsSearchPath {
 					if strings.Contains(path, f.fio.SearchPath) {
-						f.printChan <- fi
+						f.sink <- fi
 					}
 				} else {
-					f.printChan <- fi
+					f.sink <- fi
 				}
 				return nil
 			}
@@ -69,7 +69,7 @@ func (f *Finder) Run() {
 			os.Stderr.WriteString("\n" + err.Error() + "\n")
 		}
 
-		close(f.printChan)
+		close(f.sink)
 	}(f)
 }
 
