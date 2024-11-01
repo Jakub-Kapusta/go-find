@@ -21,6 +21,19 @@ import (
 // BenchmarkSha256Long-16           4876554               245.0 ns/op
 // BenchmarkSha512Long-16           2057421               588.5 ns/op
 
+// goos: linux
+// goarch: amd64
+// pkg: github.com/Jakub-Kapusta/go-find/apps/dbupdate
+// cpu: AMD Ryzen 9 5900X 12-Core Processor
+// BenchmarkMd5sumShort-24          6351385               190.9 ns/op
+// BenchmarkSha224Short-24         10095444               114.9 ns/op
+// BenchmarkSha256Short-24         10339441               114.0 ns/op
+// BenchmarkSha512Short-24          4060003               291.0 ns/op
+// BenchmarkMd5sumLong-24           2350552               492.0 ns/op
+// BenchmarkSha224Long-24           4826914               257.8 ns/op
+// BenchmarkSha256Long-24           4817583               255.2 ns/op
+// BenchmarkSha512Long-24           2114062               560.0 ns/op
+
 var shortTeststring = []byte("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua")
 var longTeststring = []byte("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.")
 
