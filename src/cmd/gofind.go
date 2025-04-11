@@ -16,50 +16,41 @@ var (
 	wg sync.WaitGroup
 	// Global ctx: should only be cancelled by the signal handler.
 	ctx, cf = context.WithCancel(context.Background())
+
+	rootCmd = &cobra.Command{
+		Version: version,
+		Use:     "gofind TODO",
+		Short:   "Find files and directories.",
+		Long: `A partial GNU findutils replacement implemented ing GO.
+
+	This application is under construction.`,
+		PersistentPreRun: func(cmd *cobra.Command, _ []string) {
+			signals.LaunchSignalHandler(ctx, cf, &wg)
+		},
+
+		Run: func(cmd *cobra.Command, _ []string) {
+			find.Find(
+				ctx,
+				&find.FinderOptions{
+					RootDir:      rootDir,
+					IsSearchPath: isSearchPath,
+					SearchPath:   searchPath,
+				},
+				unsafePrint,
+				print0)
+		},
+		PersistentPostRun: func(cmd *cobra.Command, _ []string) {
+			cf()
+			wg.Wait()
+		},
+	}
 )
 
-var rootCmd = &cobra.Command{
-	Version: version,
-	Use:     "gofind TODO",
-	Short:   "Find files and directories.",
-	Long: `A partial GNU findutils replacement implemented ing GO.
-
-This application is under construction.`,
-	PersistentPreRun: func(cmd *cobra.Command, args []string) {
-		if err := validateFlags(); err != nil {
-			os.Stderr.WriteString(err.Error() + "\n")
-			os.Exit(1)
-		}
-		signals.LaunchSignalHandler(ctx, cf, &wg)
-	},
-	// args[0] is the first actual argument, and not the name of the program.
-	// Only arguments not caught by our flag definitions will be present.
-	Run: func(cmd *cobra.Command, args []string) {
-
-		find.Find(
-			ctx,
-			args,
-			&find.FinderOptions{
-				RootDir:      rootDir,
-				IsSearchPath: isSearchPath,
-				SearchPath:   searchPath,
-			},
-			unsafePrint,
-			print0)
-	},
-	PersistentPostRun: func(cmd *cobra.Command, args []string) {
-		cf()
-		wg.Wait()
-	},
-}
-
-func init() {
+func CreateAndExecute() {
 	setFlags()
-}
 
-func Execute() {
-	err := rootCmd.Execute()
-	if err != nil {
+	if err := rootCmd.Execute(); err != nil {
+		os.Stderr.WriteString("rootCmd.Execute() failed")
 		os.Exit(1)
 	}
 }
