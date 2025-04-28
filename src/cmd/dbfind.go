@@ -14,7 +14,7 @@ var dbfindCmd = &cobra.Command{
 
 This application is under construction.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		dbfind.DbFind(ctx, args, unsafePrint, print0, isSearchPath, searchPath)
+		dbfind.DbFind(ctx, args, unsafePrint, print0, isSearchPath, pathQuery)
 	},
 }
 

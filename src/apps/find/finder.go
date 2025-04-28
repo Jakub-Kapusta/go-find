@@ -3,6 +3,7 @@ package find
 
 import (
 	"context"
+	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -16,7 +17,9 @@ import (
 type FinderOptions struct {
 	RootDir      string
 	IsSearchPath bool
-	SearchPath   string
+	PathQuery    string
+	UnsafePrint  bool
+	Print0       bool
 }
 
 type Finder struct {
@@ -56,7 +59,8 @@ func (f *Finder) Run() {
 				}
 
 				if f.fio.IsSearchPath {
-					if strings.Contains(path, f.fio.SearchPath) {
+					fmt.Println(f.fio.PathQuery)
+					if strings.Contains(path, f.fio.PathQuery) {
 						f.sink <- fi
 					}
 				} else {

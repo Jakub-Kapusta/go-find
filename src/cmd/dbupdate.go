@@ -14,7 +14,7 @@ var dbupdateCmd = &cobra.Command{
 
 This application is under construction.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		dbupdate.DbUpdate(ctx, args, rootDir, isSearchPath, searchPath)
+		dbupdate.DbUpdate(ctx, args, rootDir, isSearchPath, pathQuery)
 	},
 }
 

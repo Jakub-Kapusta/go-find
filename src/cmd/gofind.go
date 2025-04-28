@@ -3,6 +3,7 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"sync"
 
@@ -34,10 +35,11 @@ var (
 				&find.FinderOptions{
 					RootDir:      rootDir,
 					IsSearchPath: isSearchPath,
-					SearchPath:   searchPath,
+					PathQuery:    pathQuery,
+					UnsafePrint:  unsafePrint,
+					Print0:       print0,
 				},
-				unsafePrint,
-				print0)
+			)
 		},
 		PersistentPostRun: func(cmd *cobra.Command, _ []string) {
 			cf()
@@ -48,6 +50,9 @@ var (
 
 func CreateAndExecute() {
 	setFlags()
+
+	fmt.Println(pathQuery)
+	fmt.Println("pathQuery")
 
 	if err := rootCmd.Execute(); err != nil {
 		os.Stderr.WriteString("rootCmd.Execute() failed")

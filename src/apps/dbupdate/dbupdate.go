@@ -24,7 +24,7 @@ func DbUpdate(ctx context.Context, args []string, rootDir string, isSearchPath b
 		&find.FinderOptions{
 			RootDir:      rootDir,
 			IsSearchPath: isSearchPath,
-			SearchPath:   searchPath,
+			PathQuery:    searchPath,
 		},
 	)
 	fi.Run()
